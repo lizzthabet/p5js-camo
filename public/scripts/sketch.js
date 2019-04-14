@@ -1,14 +1,11 @@
-var logo;
+const sketch1DNoise = (p) => {
+  p.setup = () => {
+    p.createCanvas(300, 300)
+  }
 
-function preload() {
-  logo = loadImage('../images/gray-area-logo-small.png');
+  p.draw = () => {
+    p.background(240)
+  }
 }
 
-function setup() {
-  createCanvas(480, 480);
-}
-
-function draw() {
-  background(35);
-  image(logo, 199, 210, 82, 59);
-}
+new p5(sketch1DNoise, 'one')
