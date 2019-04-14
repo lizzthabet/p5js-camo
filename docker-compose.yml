@@ -1,0 +1,15 @@
+version: '2'
+services:
+  server:
+    image: francisli/ccimmersive-starter-kit
+    # To customize and build your own image, UN-comment the following line by removing the #
+    # build: .
+    command: bash -l -c "yarn start"
+    volumes:
+      - .:/opt/node/app
+      - /opt/node/app/node_modules
+    environment:
+      - PORT=8080
+    ports:
+      - 8080:8080
+      - 3001:3001
