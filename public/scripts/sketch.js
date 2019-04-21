@@ -103,6 +103,9 @@ const sketch2DNoise = (p) => {
   let nDetail = 8
   let nAdjust = 0.5
   let randomNThreshhold = 45
+  let randomHueThreshhold = 0.6
+  let randomSatThreshhold = 1
+  let randomBriThreshhold = 1
 
   // CONSTANTS
   const CANVAS_HEIGHT = 600
@@ -130,7 +133,7 @@ const sketch2DNoise = (p) => {
     p.colorMode(p.HSB, 100)
     p.randomSeed(nSeed)
     p.noiseSeed(nSeed)
-    p.noiseDetail(nDetail, nAdjust) // Make slider
+    p.noiseDetail(nDetail, nAdjust)
     
     for (let y = 0; y < ROWS; y++) {
       let xHueOff = HUE_START;
@@ -141,14 +144,21 @@ const sketch2DNoise = (p) => {
         // Introducing random additions to perlin noise values
         if (p.random(100) < randomNThreshhold) {
           p.noStroke()
-          const randomHue = p.noise(xHueOff + p.random(-0.6, 0.6), yoff + p.random(-0.6, 0.6)) * 100
+          const randomHue = p.noise(
+            xHueOff + p.random(-randomHueThreshhold, randomHueThreshhold),
+            yoff + p.random(-randomHueThreshhold, randomHueThreshhold)
+          ) * 100
 
           const randomSat = sketch2DNoise.mapSaturation(
-            p.noise(xSatOff + p.random(-1, 1), yoff + p.random(-1, 1))
+            p.noise(
+              xSatOff + p.random(-randomSatThreshhold, randomSatThreshhold),
+              yoff + p.random(-randomSatThreshhold, randomSatThreshhold))
           * 100)
 
           const randomBri = sketch2DNoise.mapBrightness(
-            p.noise(xBriOff + p.random(-1, 1), yoff + p.random(-1, 1))
+            p.noise(
+              xBriOff + p.random(-randomBriThreshhold, randomBriThreshhold),
+              yoff + p.random(-randomBriThreshhold, randomBriThreshhold))
            * 100)
 
           p.fill(p.color(randomHue, randomSat, randomBri))
@@ -182,6 +192,9 @@ const sketch2DNoise = (p) => {
     nDetail = 8
     nAdjust = 0.5
     randomNThreshhold = 45
+    randomHueThreshhold = 0.6
+    randomSatThreshhold = 1
+    randomBriThreshhold = 1
   }
 
   sketch2DNoise.reseed = () => {
@@ -208,6 +221,18 @@ const sketch2DNoise = (p) => {
 
   sketch2DNoise.setRandomNoise = (threshhold) => {
     randomNThreshhold = parseInt(threshhold, 10)
+  }
+
+  sketch2DNoise.setRandomHueThreshhold = (threshhold) => {
+    randomHueThreshhold = parseFloat(threshhold)
+  }
+
+  sketch2DNoise.setRandomSatThreshhold = (threshhold) => {
+    randomSatThreshhold = parseFloat(threshhold)
+  }
+
+  sketch2DNoise.setRandomBriThreshhold = (threshhold) => {
+    randomBriThreshhold = parseFloat(threshhold)
   }
 }
 
@@ -271,9 +296,56 @@ slider2DRandomNoise.addEventListener('change', (evt) => {
   }
 })
 
+// RANDOM HUE VARIATION
+const slider2DRandomHue = document.getElementById('two-random-hue')
+const value2DRandomHue = document.getElementById('two-random-hue-value')
+
+slider2DRandomHue.addEventListener('change', (evt) => {
+  const newValue = evt.target.value;
+  if (newValue !== undefined && newValue !== null) {
+    sketch2DNoise.setRandomHueThreshhold(newValue)
+    value2DRandomHue.innerHTML = newValue
+  }
+})
+
+// RANDOM SATURATION VARIATION
+const slider2DRandomSat = document.getElementById('two-random-sat')
+const value2DRandomSat = document.getElementById('two-random-sat-value')
+
+slider2DRandomSat.addEventListener('change', (evt) => {
+  const newValue = evt.target.value;
+  if (newValue !== undefined && newValue !== null) {
+    sketch2DNoise.setRandomSatThreshhold(newValue)
+    value2DRandomSat.innerHTML = newValue
+  }
+})
+
+// RANDOM BRIGHTNESS VARIATION
+const slider2DRandomBri = document.getElementById('two-random-bri')
+const value2DRandomBri = document.getElementById('two-random-bri-value')
+
+slider2DRandomBri.addEventListener('change', (evt) => {
+  const newValue = evt.target.value;
+  if (newValue !== undefined && newValue !== null) {
+    sketch2DNoise.setRandomBriThreshhold(newValue)
+    value2DRandomBri.innerHTML = newValue
+  }
+})
+
 // RESET
 const button2DReset = document.getElementById('two-reset')
-button2DReset.addEventListener('click', () => sketch2DNoise.reset())
+const resetAllValues = () => {
+  sketch2DNoise.reset()
+  value2DNoiseIncrement.innerHTML = 0.1
+  value2DPixelScale.innerHTML = 7
+  value2DNoiseDetail.innerHTML = 8
+  value2DNoiseAdjust.innerHTML = 0.5
+  value2DRandomNoise.innerHTML = 45
+  value2DRandomHue.innerHTML = 0.6
+  value2DRandomSat.innerHTML = 1
+  value2DRandomBri.innerHTML = 1
+}
+button2DReset.addEventListener('click', resetAllValues)
 button2DReset.addEventListener('enter', () => sketch2DNoise.reset())
 
 // RESET
