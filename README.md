@@ -2,7 +2,7 @@
 
 _An experiment with pattern generation using p5js and Perlin noise_
 
-This project has a simple GUI to visualize one-dimensional and two-dimensional perlin noise. The 2D visualization uses perlin noise and introduces random variations on perlin noise values in HSL color mode. It attempts to create a fractal pattern similiar to a one outlined in _[Urban camouflage assessment through visual search and computational saliency](https://www.academia.edu/21209710/Urban_camouflage_assessment_through_visual_search_and_computational_saliency)_, which is produced from Gaussian white noise that's been filtered in the Fourier domain to create 1/_f_ noise. These visualizations also build heavily from [The Coding Train's perlin noise series](https://www.youtube.com/playlist?list=PLRqwX-V7Uu6bgPNQAdxQZpJuJCjeOr7VD).
+This project has a simple GUI to visualize one-dimensional and two-dimensional perlin noise. The 2D visualization uses perlin noise and introduces random variations on perlin noise values in HSL color mode. It attempts to create a fractal pattern similiar to one outlined in _[Urban camouflage assessment through visual search and computational saliency](https://www.academia.edu/21209710/Urban_camouflage_assessment_through_visual_search_and_computational_saliency)_, which is produced from Gaussian white noise that's been filtered in the Fourier domain to create 1/_f_ noise. These visualizations also build heavily from [The Coding Train's perlin noise series](https://www.youtube.com/playlist?list=PLRqwX-V7Uu6bgPNQAdxQZpJuJCjeOr7VD).
 
 ![1D Perlin noise visualization](./public/images/screenshot-perlin-1d.png)
 
