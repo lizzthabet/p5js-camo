@@ -94,35 +94,72 @@ slider1DNoiseIncrement.addEventListener('change', (evt) => {
   }
 })
 
+// 2D SKETCH HELPERS
+// Returns a function that will map a number to a set scale
+const mapXToY = (scale, outputStart, inputStart) => {
+  return function (number) {return outputStart + scale * (number - inputStart)}
+}
+
+const config = {
+  increment: 0.10,
+  squareScale: 5,
+  nSeed: 100,
+  nDetail: 8,
+  nAdjust: 0.5,
+  randomNThreshhold: 60,
+  randomHueThreshhold: 0.6,
+  randomSatThreshhold: 1,
+  randomBriThreshhold: 1.6,
+}
+
+const floatSettings = ['increment', 'nAdjust', 'randomHueThreshhold', 'randomSatThreshhold', 'randomBriThreshhold']
+
+const parseIntOrFloat = (settingName, settingValue) => floatSettings.includes(settingName) ? parseFloat(settingValue) : parseInt(settingValue, 10)
+
+// Returns an event handler that updates a setting in the sketch config
+const singleSettingHandler = (settingName, elementToUpdate) => (evt) => {
+  const setting = {}
+  const newValue = evt.target.value;
+  if (newValue !== undefined && newValue !== null) {
+    setting[settingName] = newValue
+    const success = sketch2DNoise.updateSettings(setting)
+    if (success && elementToUpdate) elementToUpdate.innerHTML = newValue
+    if (!success) evt.target.value = config.value
+  }
+}
+// END HELPERS
+
 const sketch2DNoise = (p) => {
-
-  // VARIABLE FACTORS
-  let increment = 0.10 // Make slider
-  let squareScale = 7 // Make slider
-  let nSeed = 100
-  let nDetail = 8
-  let nAdjust = 0.5
-  let randomNThreshhold = 45
-  let randomHueThreshhold = 0.6
-  let randomSatThreshhold = 1
-  let randomBriThreshhold = 1
-
   // CONSTANTS
   const CANVAS_HEIGHT = 600
   const CANVAS_WIDTH = 600
-  let COLS = Math.floor(CANVAS_WIDTH / squareScale) // almost CONST
-  let ROWS = Math.floor(CANVAS_HEIGHT / squareScale) // almost CONST
   const HUE_START = 0
   const SAT_START = 10000
   const BRI_START = 20000
   const BRI_SCALE = (100 - 45) / (100 - 0)
   const SAT_SCALE = (70 - 0) / (100 - 0)
+  let COLS = Math.floor(CANVAS_WIDTH / config.squareScale) // almost CONST
+  let ROWS = Math.floor(CANVAS_HEIGHT / config.squareScale) // almost CONST
   
-  sketch2DNoise.mapXToY = (scale, outputStart, inputStart) => {
-    return function (number) {return outputStart + scale * (number - inputStart)}
+  // HELPERS
+  const mapBrightness = mapXToY(BRI_SCALE, 45, 0)
+
+  const mapSaturation = mapXToY(SAT_SCALE, 0, 0)
+
+  const random = (threshhold) => p.random(-threshhold, threshhold)
+
+  const addRandomToOff = (xoff, yoff, threshhold) => {
+    const addToX = random(threshhold)
+    const addToY = random(threshhold)
+    return [ xoff + addToX, yoff + addToY ]
   }
-  sketch2DNoise.mapBrightness = sketch2DNoise.mapXToY(BRI_SCALE, 45, 0)
-  sketch2DNoise.mapSaturation = sketch2DNoise.mapXToY(SAT_SCALE, 0, 0)
+
+  const perlinHue = (xoff, yoff) => p.noise(xoff, yoff) * 100
+
+  const perlinSat = (xoff, yoff) => mapSaturation(p.noise(xoff, yoff) * 100)
+
+  const perlinBri = (xoff, yoff) => mapBrightness(p.noise(xoff, yoff) * 100)
+  // END HELPERS
   
   p.setup = () => {
     p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT)
@@ -131,224 +168,146 @@ const sketch2DNoise = (p) => {
   p.draw = () => {
     let yoff = 0
     p.colorMode(p.HSB, 100)
-    p.randomSeed(nSeed)
-    p.noiseSeed(nSeed)
-    p.noiseDetail(nDetail, nAdjust)
+    p.randomSeed(config.nSeed)
+    p.noiseSeed(config.nSeed)
+    p.noiseDetail(config.nDetail, config.nAdjust)
     
     for (let y = 0; y < ROWS; y++) {
-      let xHueOff = HUE_START;
-      let xSatOff = SAT_START;
-      let xBriOff = BRI_START;
+      let xHueOff = HUE_START
+      let xSatOff = SAT_START
+      let xBriOff = BRI_START
+
       for (let x = 0; x < COLS; x++) {
+        let hue
+        let bri
+        let sat
         
-        // Introducing random additions to perlin noise values
-        if (p.random(100) < randomNThreshhold) {
-          p.noStroke()
-          const randomHue = p.noise(
-            xHueOff + p.random(-randomHueThreshhold, randomHueThreshhold),
-            yoff + p.random(-randomHueThreshhold, randomHueThreshhold)
-          ) * 100
+        // Introduce random additions to perlin noise values
+        if (p.random(100) < config.randomNThreshhold) {
+          const [ randomHueXoff, randomHueYoff ] = addRandomToOff(xHueOff, yoff, config.randomHueThreshhold)
+          hue = perlinHue(randomHueXoff, randomHueYoff)
+          
+          const [ randomSatXoff, randomSatYoff ] = addRandomToOff(xSatOff, yoff, config.randomSatThreshhold)
+          sat = perlinSat(randomSatXoff, randomSatYoff)
 
-          const randomSat = sketch2DNoise.mapSaturation(
-            p.noise(
-              xSatOff + p.random(-randomSatThreshhold, randomSatThreshhold),
-              yoff + p.random(-randomSatThreshhold, randomSatThreshhold))
-          * 100)
-
-          const randomBri = sketch2DNoise.mapBrightness(
-            p.noise(
-              xBriOff + p.random(-randomBriThreshhold, randomBriThreshhold),
-              yoff + p.random(-randomBriThreshhold, randomBriThreshhold))
-           * 100)
-
-          p.fill(p.color(randomHue, randomSat, randomBri))
-          p.rect(x * squareScale, y * squareScale, squareScale, squareScale)
-
+          const [ randomBriXoff, randomBriYoff ] = addRandomToOff(xBriOff, yoff, config.randomBriThreshhold)
+          bri = perlinBri(randomBriXoff, randomBriYoff)
         } else {
-          const randomHue = p.noise(xHueOff, yoff) * 100
-          const randomSat = sketch2DNoise.mapSaturation(p.noise(xSatOff, yoff) * 100)
-          const randomBri = sketch2DNoise.mapBrightness(p.noise(xBriOff, yoff) * 100)
-        
-          p.noStroke()
-          p.fill(p.color(randomHue, randomSat, randomBri))
-          p.rect(x * squareScale, y * squareScale, squareScale, squareScale)
+          // No random addition to perlin noise values
+          hue = p.noise(xHueOff, yoff) * 100
+          sat = mapSaturation(p.noise(xSatOff, yoff) * 100)
+          bri = mapBrightness(p.noise(xBriOff, yoff) * 100)
+        }
+
+        // Draw a rectangle with the color
+        p.noStroke()
+        p.fill(p.color(hue, sat, bri))
+        p.rect(x * config.squareScale, y * config.squareScale, config.squareScale, config.squareScale)
+
+        // Increment the x offset values
+        xHueOff += config.increment
+        xSatOff += config.increment
+        xBriOff += config.increment
       }
-      
-      xHueOff += increment
-      xSatOff += increment
-      xBriOff += increment
-      }
-      
-      yoff += increment
+
+      // Increment the y offset value
+      yoff += config.increment
     }
   }
 
-  sketch2DNoise.reset = () => {
-    increment = 0.1
-    squareScale = 7
-    COLS = Math.floor(CANVAS_WIDTH / squareScale)
-    ROWS = Math.floor(CANVAS_HEIGHT / squareScale)
-    nSeed = 100
-    nDetail = 8
-    nAdjust = 0.5
-    randomNThreshhold = 45
-    randomHueThreshhold = 0.6
-    randomSatThreshhold = 1
-    randomBriThreshhold = 1
-  }
+  sketch2DNoise.reset = () => sketch2DNoise
+    .updateSettings({
+      increment: 0.1,
+      squareScale: 5,
+      nSeed: 100,
+      nDetail: 8,
+      nAdjust: 0.5,
+      randomNThreshhold: 60,
+      randomHueThreshhold: 0.6,
+      randomSatThreshhold: 1,
+      randomBriThreshhold: 1.6
+    })
 
-  sketch2DNoise.reseed = () => {
-    nSeed = Math.floor(Math.random() * 1000)
-  }
+  sketch2DNoise.reseed = () => sketch2DNoise.updateSettings({ 'nSeed': Math.floor(Math.random() * 1000) })
 
-  sketch2DNoise.setDetail = (detail) => {
-    nDetail = parseInt(detail, 10)
-  }
+  // Takes a config object and returns whether or not whole update is successful 
+  sketch2DNoise.updateSettings = (newSettings) => {
+    let updateSuccessful = true
+    for (const key in newSettings) {
+      if (config.hasOwnProperty(key)) {
+        config[key] = parseIntOrFloat(key, newSettings[key])
 
-  sketch2DNoise.setAdjust = (adjust) => {
-    nAdjust = parseFloat(adjust)
-  }
-
-  sketch2DNoise.setIncrement = (incr) => {
-    increment = parseFloat(incr)
-  }
-  
-  sketch2DNoise.setPixelScale = (pixelScale) => {
-    squareScale = parseInt(pixelScale, 10)
-    COLS = Math.floor(CANVAS_WIDTH / squareScale)
-    ROWS = Math.floor(CANVAS_HEIGHT / squareScale)
-  }
-
-  sketch2DNoise.setRandomNoise = (threshhold) => {
-    randomNThreshhold = parseInt(threshhold, 10)
-  }
-
-  sketch2DNoise.setRandomHueThreshhold = (threshhold) => {
-    randomHueThreshhold = parseFloat(threshhold)
-  }
-
-  sketch2DNoise.setRandomSatThreshhold = (threshhold) => {
-    randomSatThreshhold = parseFloat(threshhold)
-  }
-
-  sketch2DNoise.setRandomBriThreshhold = (threshhold) => {
-    randomBriThreshhold = parseFloat(threshhold)
+        // Update dependent properties for `squareScale`
+        if (key === 'squareScale') {
+          COLS = Math.floor(CANVAS_WIDTH / config.squareScale)
+          ROWS = Math.floor(CANVAS_HEIGHT / config.squareScale)
+        }
+      } else {
+        console.error(`Config does not have property ${key} to update.`)
+        updateSuccessful = false
+      }
+    }
+    return updateSuccessful
   }
 }
 
 // NOISE DETAIL
 const slider2DNoiseDetail = document.getElementById('two-noise-detail')
 const value2DNoiseDetail = document.getElementById('two-noise-detail-value')
-
-slider2DNoiseDetail.addEventListener('change', (evt) => {
-  const newValue = evt.target.value;
-  if (newValue !== undefined && newValue !== null) {
-    sketch2DNoise.setDetail(newValue)
-    value2DNoiseDetail.innerHTML = newValue
-  }
-})
+slider2DNoiseDetail.addEventListener('change', singleSettingHandler('nDetail', value2DNoiseDetail))
 
 // NOISE ADJUSTMENT
 const slider2DNoiseAdjust = document.getElementById('two-noise-adjust')
 const value2DNoiseAdjust = document.getElementById('two-noise-adjust-value')
-
-slider2DNoiseAdjust.addEventListener('change', (evt) => {
-  const newValue = evt.target.value;
-  if (newValue !== undefined && newValue !== null) {
-    sketch2DNoise.setAdjust(newValue)
-    value2DNoiseAdjust.innerHTML = newValue
-  }
-})
+slider2DNoiseAdjust.addEventListener('change', singleSettingHandler('nAdjust', value2DNoiseAdjust))
 
 // NOISE INCREMENT
 const slider2DNoiseIncrement = document.getElementById('two-noise-increment')
 const value2DNoiseIncrement = document.getElementById('two-noise-increment-value')
-
-slider2DNoiseIncrement.addEventListener('change', (evt) => {
-  const newValue = evt.target.value;
-  if (newValue !== undefined && newValue !== null) {
-    sketch2DNoise.setIncrement(newValue)
-    value2DNoiseIncrement.innerHTML = newValue
-  }
-})
+slider2DNoiseIncrement.addEventListener('change', singleSettingHandler('increment', value2DNoiseIncrement))
 
 // PIXEL SCALE
 const slider2DPixelScale = document.getElementById('two-pixel-scale')
 const value2DPixelScale = document.getElementById('two-pixel-scale-value')
-
-slider2DPixelScale.addEventListener('change', (evt) => {
-  const newValue = evt.target.value;
-  if (newValue !== undefined && newValue !== null) {
-    sketch2DNoise.setPixelScale(newValue)
-    value2DPixelScale.innerHTML = newValue
-  }
-})
+slider2DPixelScale.addEventListener('change', singleSettingHandler('squareScale', value2DPixelScale))
 
 // RANDOM NOISE
 const slider2DRandomNoise = document.getElementById('two-random-noise')
 const value2DRandomNoise = document.getElementById('two-random-noise-value')
-
-slider2DRandomNoise.addEventListener('change', (evt) => {
-  const newValue = evt.target.value;
-  if (newValue !== undefined && newValue !== null) {
-    sketch2DNoise.setRandomNoise(newValue)
-    value2DRandomNoise.innerHTML = newValue
-  }
-})
+slider2DRandomNoise.addEventListener('change', singleSettingHandler('randomNThreshhold', value2DRandomNoise))
 
 // RANDOM HUE VARIATION
 const slider2DRandomHue = document.getElementById('two-random-hue')
 const value2DRandomHue = document.getElementById('two-random-hue-value')
-
-slider2DRandomHue.addEventListener('change', (evt) => {
-  const newValue = evt.target.value;
-  if (newValue !== undefined && newValue !== null) {
-    sketch2DNoise.setRandomHueThreshhold(newValue)
-    value2DRandomHue.innerHTML = newValue
-  }
-})
+slider2DRandomHue.addEventListener('change', singleSettingHandler('randomHueThreshhold', value2DRandomHue))
 
 // RANDOM SATURATION VARIATION
 const slider2DRandomSat = document.getElementById('two-random-sat')
 const value2DRandomSat = document.getElementById('two-random-sat-value')
-
-slider2DRandomSat.addEventListener('change', (evt) => {
-  const newValue = evt.target.value;
-  if (newValue !== undefined && newValue !== null) {
-    sketch2DNoise.setRandomSatThreshhold(newValue)
-    value2DRandomSat.innerHTML = newValue
-  }
-})
+slider2DRandomSat.addEventListener('change', singleSettingHandler('randomSatThreshhold', value2DRandomSat))
 
 // RANDOM BRIGHTNESS VARIATION
 const slider2DRandomBri = document.getElementById('two-random-bri')
 const value2DRandomBri = document.getElementById('two-random-bri-value')
-
-slider2DRandomBri.addEventListener('change', (evt) => {
-  const newValue = evt.target.value;
-  if (newValue !== undefined && newValue !== null) {
-    sketch2DNoise.setRandomBriThreshhold(newValue)
-    value2DRandomBri.innerHTML = newValue
-  }
-})
+slider2DRandomBri.addEventListener('change', singleSettingHandler('randomBriThreshhold', value2DRandomBri))
 
 // RESET
 const button2DReset = document.getElementById('two-reset')
 const resetAllValues = () => {
   sketch2DNoise.reset()
-  value2DNoiseIncrement.innerHTML = 0.1
-  value2DPixelScale.innerHTML = 7
-  value2DNoiseDetail.innerHTML = 8
-  value2DNoiseAdjust.innerHTML = 0.5
-  value2DRandomNoise.innerHTML = 45
-  value2DRandomHue.innerHTML = 0.6
-  value2DRandomSat.innerHTML = 1
-  value2DRandomBri.innerHTML = 1
+  value2DNoiseIncrement.innerHTML = config.increment
+  value2DPixelScale.innerHTML = config.squareScale
+  value2DNoiseDetail.innerHTML = config.nDetail
+  value2DNoiseAdjust.innerHTML = config.nAdjust
+  value2DRandomNoise.innerHTML = config.randomNThreshhold
+  value2DRandomHue.innerHTML = config.randomHueThreshhold
+  value2DRandomSat.innerHTML = config.randomSatThreshhold
+  value2DRandomBri.innerHTML = config.randomBriThreshhold
 }
 button2DReset.addEventListener('click', resetAllValues)
-button2DReset.addEventListener('enter', () => sketch2DNoise.reset())
+button2DReset.addEventListener('enter', resetAllValues)
 
-// RESET
+// RESEED
 const button2DReseed = document.getElementById('two-reseed')
 button2DReseed.addEventListener('click', () => sketch2DNoise.reseed())
 button2DReseed.addEventListener('enter', () => sketch2DNoise.reseed())
