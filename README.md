@@ -1,5 +1,13 @@
 # p5js-camo
 
+_An experiment with pattern generation using p5js and Perlin noise_
+
+This project has a simple GUI to visualize one-dimensional and two-dimensional perlin noise. The 2D visualization uses perlin noise and introduces random variations on perlin noise values in HSL color mode. It attempts to create a fractal pattern similiar to a one outlined in _[Urban camouflage assessment through visual search and computational saliency](https://www.academia.edu/21209710/Urban_camouflage_assessment_through_visual_search_and_computational_saliency)_, which is produced from Gaussian white noise that's been filtered in the Fourier domain to create 1/_f_ noise. These visualizations also build heavily from [The Coding Train's perlin noise series](https://www.youtube.com/playlist?list=PLRqwX-V7Uu6bgPNQAdxQZpJuJCjeOr7VD).
+
+![1D Perlin noise visualization](./public/images/screenshot-perlin-1d.png)
+
+![2D Perlin noise visualization](./public/images/screenshot-perlin-2d.png)
+
 ## Quick Start (Pulled from Creative Code Immersive Starter Kit)
 
 1. Download and install the free Docker Community Edition for your operating system:
@@ -53,5 +61,3 @@ server_1  | [23:05:48] [nodemon] starting `node server/bin/www`
 ## Project structure
 
 The Node.js app looks for static files to serve in the **public** folder. You can add/delete/edit files in the public folder for your P5.js sketch. Note that a developer tool called BrowserSync will be watching for changes in the public folder, and will automatically trigger a browser refresh when a file has changed (note: CSS changes are hot-loaded into the browser without a refresh).
-
-
